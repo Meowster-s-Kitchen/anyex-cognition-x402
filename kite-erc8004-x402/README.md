@@ -125,6 +125,13 @@ async function x402Middleware(req, res, next) {
 - The middleware only needs to call `settleWithUSDC` once, then grant access or consume credits.
 - For *PER_CALL* SKUs, your resource server should decrement credits via `consumeCall` after successful off-chain usage.
 
+## TypeScript examples
+
+Reference implementations for SKU verification + USDC pre-signing and a facilitator using the Coinbase x402 SDK:
+
+- `examples/typescript/resource-server.ts` — validates SKU state, builds EIP-3009 authorization, and posts the intent to a facilitator.
+- `examples/typescript/facilitator.ts` — receives intents, verifies via Coinbase x402 SDK, and calls `settleWithUSDC`.
+
 ## Development
 
 Install dependencies:
