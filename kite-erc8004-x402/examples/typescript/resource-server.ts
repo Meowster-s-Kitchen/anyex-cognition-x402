@@ -29,6 +29,35 @@ const skuAbi = [
   "function skus(uint256 skuId) view returns (uint256 agentId, uint8 licenseType, address pricingToken, uint256 price, uint64 periodSeconds, bool active)"
 ];
 
+const addressRegex = /^0x[a-fA-F0-9]{40}$/;
+const missingVars = ["RPC_URL", "SKU_REGISTRY", "USDC_ADDRESS", "SETTLEMENT_ADDRESS"].filter(
+  (key) => !process.env[key]?.trim()
+);
+const invalidAddressVars = [
+  { key: "SKU_REGISTRY", value: SKU_REGISTRY },
+  { key: "USDC_ADDRESS", value: USDC_ADDRESS },
+  { key: "SETTLEMENT_ADDRESS", value: SETTLEMENT_ADDRESS }
+].filter((entry) => !addressRegex.test(entry.value));
+const invalidChainId = CHAIN_ID <= 0n;
+
+if (missingVars.length > 0 || invalidAddressVars.length > 0 || invalidChainId) {
+  const messages: string[] = [];
+  if (missingVars.length > 0) {
+    messages.push(`Missing required environment variables: ${missingVars.join(", ")}`);
+  }
+  if (invalidAddressVars.length > 0) {
+    messages.push(
+      `Invalid address values (expected 0x + 40 hex): ${invalidAddressVars
+        .map((entry) => entry.key)
+        .join(", ")}`
+    );
+  }
+  if (invalidChainId) {
+    messages.push("Invalid CHAIN_ID (must be > 0).");
+  }
+  throw new Error(messages.join(" "));
+}
+
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const skuContract = new ethers.Contract(SKU_REGISTRY, skuAbi, provider);
 
