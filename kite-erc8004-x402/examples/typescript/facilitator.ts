@@ -22,6 +22,20 @@ type PaymentIntent = {
 const RPC_URL = process.env.RPC_URL ?? "";
 const SETTLEMENT_ADDRESS = process.env.SETTLEMENT_ADDRESS ?? "";
 const FACILITATOR_KEY = process.env.FACILITATOR_KEY ?? "";
+const CHAIN_ID = process.env.CHAIN_ID ?? "";
+
+const missingEnvVars = ["RPC_URL", "SETTLEMENT_ADDRESS", "FACILITATOR_KEY", "CHAIN_ID"].filter(
+  (key) => !process.env[key]?.trim()
+);
+
+if (missingEnvVars.length > 0) {
+  throw new Error(`Missing required environment variables: ${missingEnvVars.join(", ")}`);
+}
+
+const chainIdNumber = Number(CHAIN_ID);
+if (!Number.isInteger(chainIdNumber) || chainIdNumber <= 0) {
+  throw new Error("Invalid CHAIN_ID (must be a positive integer).");
+}
 
 const settlementAbi = [
   "function settleWithUSDC((bytes32 paymentId,uint256 skuId,uint256 agentId,address payer,uint256 amount),(uint256 validAfter,uint256 validBefore,bytes32 nonce,bytes signature))"
@@ -37,7 +51,7 @@ app.use(express.json());
 const x402 = new X402Facilitator({
   // Coinbase SDK handles x402 intent validation / signature checks.
   // Provide chain / contract config per Coinbase SDK docs.
-  chainId: Number(process.env.CHAIN_ID ?? "0")
+  chainId: chainIdNumber
 });
 
 app.post("/x402/settle", async (req, res) => {
