@@ -32,6 +32,13 @@ const skuAbi = [
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const skuContract = new ethers.Contract(SKU_REGISTRY, skuAbi, provider);
 
+const isBytes32Hex = (value: string) => /^0x[0-9a-fA-F]{64}$/.test(value);
+
+const normalizePaymentId = (paymentId: string) =>
+  isBytes32Hex(paymentId)
+    ? paymentId
+    : ethers.keccak256(ethers.toUtf8Bytes(paymentId));
+
 export async function verifySku(params: {
   skuId: bigint;
   agentId: bigint;
@@ -134,9 +141,10 @@ export async function buildPaymentIntent(params: {
     validBefore,
     nonce
   });
+  const normalizedPaymentId = normalizePaymentId(paymentId);
 
   return {
-    paymentId,
+    paymentId: normalizedPaymentId,
     skuId,
     agentId,
     payer,
