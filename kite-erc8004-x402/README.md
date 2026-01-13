@@ -138,3 +138,51 @@ Run tests:
 ```
 forge test -vv
 ```
+
+## Deployment
+
+### Networks
+
+- **ETH Mainnet**
+- **BSC Mainnet**
+- **Kite Testnet** (Chain name: KiteAI Testnet, RPC: <https://rpc-testnet.gokite.ai/>, Chain ID: 2368, Token: KITE, Explorer: <https://testnet.kitescan.ai/>)
+
+### Environment variables
+
+Set these before running `forge script`:
+
+- `PRIVATE_KEY`: Deployer key (hex, no `0x` prefix recommended).
+- `RPC_URL`: The target chain RPC URL (e.g., mainnet, BSC, or Kite testnet).
+- `TREASURY_ADDRESS`: (Optional) Marketplace fee treasury. Defaults to the deployer.
+- `FEE_BPS`: (Optional) Marketplace fee in basis points (0-2000). Defaults to `0`.
+- `USDC_ADDRESS`: (Required for Kite Testnet and any unknown chain). See script mapping notes below.
+
+### USDC constructor args per network
+
+`X402SettlementUSDC` requires a USDC address. The deployment script includes a chain ID switch:
+
+- **ETH Mainnet (1):** `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48`
+- **BSC Mainnet (56):** `0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d`
+- **Kite Testnet (2368):** Set `USDC_ADDRESS` in your environment.
+
+If you need to change these addresses or add networks, edit `_usdcForChain` in `script/Deploy.s.sol`.
+
+### Example commands
+
+```bash
+# ETH Mainnet
+export RPC_URL=<your-mainnet-rpc>
+export PRIVATE_KEY=<your-private-key>
+forge script script/Deploy.s.sol:Deploy --rpc-url "$RPC_URL" --broadcast --verify -vvvv
+
+# BSC Mainnet
+export RPC_URL=<your-bsc-rpc>
+export PRIVATE_KEY=<your-private-key>
+forge script script/Deploy.s.sol:Deploy --rpc-url "$RPC_URL" --broadcast --verify -vvvv
+
+# Kite Testnet
+export RPC_URL=https://rpc-testnet.gokite.ai/
+export PRIVATE_KEY=<your-private-key>
+export USDC_ADDRESS=<kite-testnet-usdc-address>
+forge script script/Deploy.s.sol:Deploy --rpc-url "$RPC_URL" --broadcast --verify -vvvv
+```
