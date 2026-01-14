@@ -131,6 +131,7 @@ Reference implementations for SKU verification + USDC pre-signing and a facilita
 
 - `examples/typescript/resource-server.ts` — validates SKU state, builds EIP-3009 authorization, and posts the intent to a facilitator.
 - `examples/typescript/facilitator.ts` — receives intents, verifies via Coinbase x402 SDK, and calls `settleWithUSDC`.
+- `examples/typescript/facilitator-middleware.ts` — Express middleware that verifies intent via Coinbase x402 SDK and enforces SKU checks before settling.
 
 ## Development
 
