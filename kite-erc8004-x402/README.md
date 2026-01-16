@@ -132,6 +132,67 @@ Reference implementations for SKU verification + USDC pre-signing and a facilita
 - `examples/typescript/resource-server.ts` — validates SKU state, builds EIP-3009 authorization, and posts the intent to a facilitator.
 - `examples/typescript/facilitator.ts` — receives intents, verifies via Coinbase x402 SDK, and calls `settleWithUSDC`.
 - `examples/typescript/facilitator-middleware.ts` — Express middleware that verifies intent via Coinbase x402 SDK and enforces SKU checks before settling.
+- `examples/typescript/resource-server-demo.ts` — minimal Express resource server that uses the middleware, settles on-chain, and returns a mock response.
+- `examples/typescript/e2e-demo.ts` — end-to-end script that registers an ERC8004 identity, builds a payment intent, settles via a facilitator, and prints a mock resource response.
+
+## E2E Demo
+
+This demo wires identity registration → payment intent creation → x402 verification + `settleWithUSDC` → mock resource response.
+
+### Environment variables
+
+Create a `.env` file or export the following:
+
+**Shared**
+- `RPC_URL` — JSON-RPC endpoint for Kite (or your deployed network).
+- `CHAIN_ID` — chain ID for the target network.
+- `IDENTITY_REGISTRY` — deployed `ERC8004IdentityRegistry` address.
+- `SKU_REGISTRY` — deployed `CognitionLicenseSKUs` address.
+- `USDC_ADDRESS` — deployed USDC (EIP-3009) token address.
+- `SETTLEMENT_ADDRESS` — deployed `X402SettlementUSDC` address.
+
+**Identity registration**
+- `REGISTRAR_KEY` — private key with `REGISTRAR_ROLE` on `ERC8004IdentityRegistry`.
+- `AGENT_OWNER_KEY` — private key for the identity owner.
+- `AGENT_WALLET` (optional) — agent wallet binding (defaults to owner).
+- `AGENT_URI` (optional) — agent token URI (defaults to `ipfs://agent-card`).
+
+**SKU & payment intent**
+- `SKU_ID` — SKU ID that matches the agent ID you will use.
+- `AGENT_ID` (optional) — override the registered agent ID if your SKU already exists.
+- `PAYER_KEY` — payer private key (signs the EIP-3009 authorization).
+- `PAYMENT_ID` (optional) — unique payment ID (defaults to `e2e-<timestamp>`).
+- `USDC_VALID_AFTER` (optional) — seconds since epoch for auth validity start.
+- `USDC_VALID_BEFORE` (optional) — seconds since epoch for auth expiry.
+- `USDC_NONCE` (optional) — bytes32 hex nonce.
+
+**Facilitator / resource server**
+- `FACILITATOR_KEY` — facilitator private key (signs settlement tx).
+- `FACILITATOR_URL` — facilitator endpoint (e.g. `http://localhost:4000/x402/settle`).
+
+### Run steps
+
+1. **Start the facilitator** (x402 verification + settlement):
+
+   ```bash
+   tsx examples/typescript/facilitator.ts
+   ```
+
+2. **(Optional) Start the resource server demo** (middleware verification + settlement + mock resource):
+
+   ```bash
+   tsx examples/typescript/resource-server-demo.ts
+   ```
+
+3. **Run the end-to-end script** (register identity → build intent → call facilitator → mock response):
+
+   ```bash
+   tsx examples/typescript/e2e-demo.ts
+   ```
+
+Notes:
+- Ensure the SKU referenced by `SKU_ID` points to the agent ID you plan to use (either the newly registered one or the `AGENT_ID` override).
+- You can swap `FACILITATOR_URL` to target `resource-server-demo.ts` by posting to `http://localhost:5000/resource` if you want the middleware-based flow.
 
 ### Cross-chain payment example (pay elsewhere, settle on Kite)
 
