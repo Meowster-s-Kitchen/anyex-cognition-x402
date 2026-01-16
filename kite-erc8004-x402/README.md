@@ -133,6 +133,50 @@ Reference implementations for SKU verification + USDC pre-signing and a facilita
 - `examples/typescript/facilitator.ts` — receives intents, verifies via Coinbase x402 SDK, and calls `settleWithUSDC`.
 - `examples/typescript/facilitator-middleware.ts` — Express middleware that verifies intent via Coinbase x402 SDK and enforces SKU checks before settling.
 
+### Cross-chain payment example (pay elsewhere, settle on Kite)
+
+Use this pattern when the user pays on another chain and you want to settle the SKU on **Kite** using a relayer or LayerZero on-chain trigger:
+
+1. **Payment on source chain**: the user pays an on-chain invoice (e.g., USDC transfer or contract payment) on Chain A.
+2. **Emit proof/receipt**: the payment contract emits an event with `paymentId`, `skuId`, `agentId`, `payer`, and `amount`.
+3. **Relayer / LayerZero trigger**:
+   - **Relayer** watches the Chain A event, validates it (and optionally checks a proof), then calls the facilitator API on your backend.
+   - **LayerZero** sends a cross-chain message to the Kite relayer contract; the relayer then calls the facilitator API.
+4. **Facilitator builds Kite settlement**:
+   - Translates the Chain A receipt into a Kite `Receipt`.
+   - Uses a pre-approved USDC allowance or a signed EIP-3009 authorization from the payer to fund Kite settlement.
+5. **Settle on Kite**: the facilitator calls `X402SettlementUSDC.settleWithUSDC` on Kite to grant entitlements.
+
+Pseudo-flow (relayer-triggered):
+
+```ts
+// Chain A watcher → backend
+onChainAPayment(async (event) => {
+  await fetch("https://facilitator/api/settle", {
+    method: "POST",
+    body: JSON.stringify({
+      paymentId: event.paymentId,
+      skuId: event.skuId,
+      agentId: event.agentId,
+      payer: event.payer,
+      amount: event.amount,
+      sourceChain: "chain-a",
+      proof: event.proof // optional
+    })
+  });
+});
+
+// Facilitator (Kite)
+await settlement.settleWithUSDC(
+  { paymentId, skuId, agentId, payer, amount },
+  usdcAuthOrAllowance
+);
+```
+
+Notes:
+- The source-chain payment **does not** have to be USDC as long as your relayer/facilitator can fund Kite settlement.
+- LayerZero (or similar) can be used to transport the proof and trigger settlement on Kite.
+
 ## Development
 
 Install dependencies:
